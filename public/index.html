@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CM Sound Player</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">CM Sound Player</div>
+        <div class="search">
+          <input id="search" type="search" placeholder="Rechercher…" autocomplete="off" />
+        </div>
+      </header>
+
+      <main class="content">
+        <div id="status" class="status">Chargement…</div>
+        <div id="list" class="list" aria-label="Liste des sons"></div>
+      </main>
+
+      <footer class="player" id="player" aria-label="Lecteur audio">
+        <div class="player__left">
+          <button id="playPause" class="btn" disabled>Play</button>
+          <div class="meta">
+            <div id="title" class="title">Aucun son</div>
+            <div class="time">
+              <span id="cur">0:00</span>
+              <span class="sep">/</span>
+              <span id="dur">0:00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="player__center">
+          <input id="progress" class="progress" type="range" min="0" max="1000" value="0" disabled />
+        </div>
+
+        <div class="player__right">
+          <div class="vol">
+            <span class="vol__label">Vol</span>
+            <input id="volume" type="range" min="0" max="1" step="0.01" value="1" />
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
