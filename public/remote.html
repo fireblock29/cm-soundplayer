@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Télécommande - CM Sound Player</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #F26A8D;
+    }
+
+    .connection-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-top: 10px;
+      transition: all 0.3s;
+    }
+
+    .connection-status.connected {
+      background: rgba(52, 211, 153, 0.2);
+      color: #34d399;
+    }
+
+    .connection-status.disconnected {
+      background: rgba(248, 113, 113, 0.2);
+      color: #f87171;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .connected .status-dot {
+      background: #34d399;
+    }
+
+    .disconnected .status-dot {
+      background: #f87171;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .now-playing {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .now-playing .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .now-playing .track-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .time-display {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      margin-top: 15px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #F26A8D, #f472b6);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .btn-control {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 16px;
+      padding: 25px 15px;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      touch-action: manipulation;
+    }
+
+    .btn-control:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-control svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .btn-play {
+      background: linear-gradient(135deg, #F26A8D, #f472b6);
+      grid-column: 2;
+      padding: 35px 20px;
+    }
+
+    .btn-play svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .btn-prev {
+      grid-column: 1;
+    }
+
+    .btn-next {
+      grid-column: 3;
+    }
+
+    .btn-keypoint {
+      grid-column: 1 / -1;
+      background: rgba(242, 106, 141, 0.2);
+      border: 1px solid rgba(242, 106, 141, 0.4);
+    }
+
+    .volume-section {
+      margin-bottom: 30px;
+    }
+
+    .volume-section .label {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .volume-slider {
+      width: 100%;
+      height: 48px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      outline: none;
+      padding: 0 5px;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F26A8D, #f472b6);
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(242, 106, 141, 0.4);
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F26A8D, #f472b6);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 15px rgba(242, 106, 141, 0.4);
+    }
+
+    .seek-section {
+      margin-bottom: 30px;
+    }
+
+    .seek-section .label {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .seek-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .btn-seek {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 12px;
+      padding: 15px 25px;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      touch-action: manipulation;
+    }
+
+    .btn-seek:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .no-track {
+      text-align: center;
+      color: #94a3b8;
+      padding: 40px 20px;
+    }
+
+    .keypoints-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .keypoint-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .keypoint-btn:active {
+      background: rgba(242, 106, 141, 0.2);
+      border-color: rgba(242, 106, 141, 0.4);
+    }
+
+    .keypoint-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .keypoint-info {
+      flex: 1;
+    }
+
+    .keypoint-name {
+      font-weight: 500;
+    }
+
+    .keypoint-time {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Track selector menu styles */
+    .track-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .track-menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .track-menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .track-menu-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #F26A8D;
+    }
+
+    .track-menu-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .track-menu-close:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .track-search {
+      margin-bottom: 15px;
+    }
+
+    .track-search input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .track-search input::placeholder {
+      color: #94a3b8;
+    }
+
+    .track-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .track-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .track-item:active {
+      background: rgba(242, 106, 141, 0.3);
+      border-color: rgba(242, 106, 141, 0.5);
+      transform: scale(0.98);
+    }
+
+    .track-item.playing {
+      background: rgba(242, 106, 141, 0.2);
+      border-color: rgba(242, 106, 141, 0.6);
+    }
+
+    .track-item-title {
+      font-weight: 500;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .track-item-hint {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .btn-track-selector {
+      background: rgba(242, 106, 141, 0.2);
+      border: 2px solid rgba(242, 106, 141, 0.5);
+      color: #fff;
+    }
+
+    .btn-track-selector:active {
+      background: rgba(242, 106, 141, 0.4);
+    }
+
+    /* Speed control styles for remote */
+    .speed-section {
+      margin-bottom: 30px;
+    }
+
+    .speed-section .label {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .speed-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .speed-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      touch-action: manipulation;
+      min-width: 50px;
+    }
+
+    .speed-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(0.95);
+    }
+
+    .speed-btn--active {
+      background: linear-gradient(135deg, #F26A8D, #f472b6);
+      border-color: rgba(242, 106, 141, 0.5);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Télécommande</h1>
+    <div class="connection-status disconnected" id="connectionStatus">
+      <span class="status-dot"></span>
+      <span id="statusText">Déconnecté</span>
+    </div>
+  </div>
+
+  <div class="now-playing" id="nowPlaying">
+    <div class="label">En cours</div>
+    <div class="track-title" id="trackTitle">Aucune piste</div>
+    <div class="time-display" id="timeDisplay">--:-- / --:--</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="volume-section">
+    <div class="label">Volume</div>
+    <input type="range" class="volume-slider" id="volume" min="0" max="1" step="0.01" value="1">
+  </div>
+
+  <div class="speed-section">
+    <div class="label">Vitesse</div>
+    <div class="speed-buttons">
+      <button class="speed-btn" data-speed="0.25">0.25x</button>
+      <button class="speed-btn" data-speed="0.5">0.5x</button>
+      <button class="speed-btn speed-btn--active" data-speed="1">1x</button>
+      <button class="speed-btn" data-speed="1.25">1.25x</button>
+      <button class="speed-btn" data-speed="1.5">1.5x</button>
+    </div>
+  </div>
+
+  <div class="seek-section">
+    <div class="label">Avance / Recul</div>
+    <div class="seek-buttons">
+      <button class="btn-seek" id="seekBack30">-30s</button>
+      <button class="btn-seek" id="seekBack10">-10s</button>
+      <button class="btn-seek" id="seekFwd10">+10s</button>
+      <button class="btn-seek" id="seekFwd30">+30s</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-control btn-prev" id="btnPrev">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="19,20 9,12 19,4"></polygon>
+        <line x1="5" y1="4" x2="5" y2="20"></line>
+      </svg>
+      <span>Précédent</span>
+    </button>
+
+    <button class="btn-control btn-play" id="btnPlayPause">
+      <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon">
+        <polygon points="5,3 19,12 5,21"></polygon>
+      </svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" id="pauseIcon" class="hidden">
+        <rect x="6" y="4" width="4" height="16"></rect>
+        <rect x="14" y="4" width="4" height="16"></rect>
+      </svg>
+      <span id="playPauseText">Play</span>
+    </button>
+
+    <button class="btn-control btn-next" id="btnNext">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="5,4 15,12 5,20"></polygon>
+        <line x1="19" y1="4" x2="19" y2="20"></line>
+      </svg>
+      <span>Suivant</span>
+    </button>
+
+    <button class="btn-control btn-track-selector" id="btnTrackSelector">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18V5l12-2v13"></path>
+        <circle cx="6" cy="18" r="3"></circle>
+        <circle cx="18" cy="16" r="3"></circle>
+      </svg>
+      <span>Chansons</span>
+    </button>
+  </div>
+
+  <!-- Track Selector Menu Overlay -->
+  <div class="track-menu-overlay" id="trackMenuOverlay">
+    <div class="track-menu-header">
+      <div class="track-menu-title">Choisir une chanson</div>
+      <button class="track-menu-close" id="btnCloseTrackMenu">×</button>
+    </div>
+    <div class="track-search">
+      <input type="text" id="trackSearchInput" placeholder="Rechercher...">
+    </div>
+    <div class="track-list" id="trackList">
+      <!-- Tracks will be populated here -->
+    </div>
+  </div>
+
+  <div class="seek-section" id="keypointsSection">
+    <div class="label">Points clés</div>
+    <div class="keypoints-list" id="keypointsList">
+      <div class="no-track">Aucun point clé défini</div>
+    </div>
+  </div>
+
+  <script>
+    const wsUrl = `ws://${window.location.host}/ws?type=remote`;
+    let ws = null;
+    let reconnectTimeout = null;
+    let heartbeatInterval = null;
+    let isReconnecting = false;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 10;
+    let messageQueue = [];
+
+    const els = {
+      connectionStatus: document.getElementById('connectionStatus'),
+      statusText: document.getElementById('statusText'),
+      trackTitle: document.getElementById('trackTitle'),
+      timeDisplay: document.getElementById('timeDisplay'),
+      progressFill: document.getElementById('progressFill'),
+      volume: document.getElementById('volume'),
+      btnPlayPause: document.getElementById('btnPlayPause'),
+      playIcon: document.getElementById('playIcon'),
+      pauseIcon: document.getElementById('pauseIcon'),
+      playPauseText: document.getElementById('playPauseText'),
+      btnPrev: document.getElementById('btnPrev'),
+      btnNext: document.getElementById('btnNext'),
+      btnTrackSelector: document.getElementById('btnTrackSelector'),
+      trackMenuOverlay: document.getElementById('trackMenuOverlay'),
+      btnCloseTrackMenu: document.getElementById('btnCloseTrackMenu'),
+      trackSearchInput: document.getElementById('trackSearchInput'),
+      trackList: document.getElementById('trackList'),
+      seekBack30: document.getElementById('seekBack30'),
+      seekBack10: document.getElementById('seekBack10'),
+      seekFwd10: document.getElementById('seekFwd10'),
+      seekFwd30: document.getElementById('seekFwd30'),
+      keypointsList: document.getElementById('keypointsList'),
+      keypointsSection: document.getElementById('keypointsSection')
+    };
+
+    let currentState = {
+      playing: false,
+      title: null,
+      currentTime: 0,
+      duration: 0,
+      volume: 1,
+      playbackRate: 1,
+      keypoints: []
+    };
+
+    let allTracks = [];
+
+    function connect() {
+      if (isReconnecting) return;
+      isReconnecting = true;
+
+      // Clear existing connection
+      if (ws) {
+        try { ws.close(); } catch (e) {}
+      }
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        isReconnecting = false;
+        reconnectAttempts = 0;
+        els.connectionStatus.classList.remove('disconnected');
+        els.connectionStatus.classList.add('connected');
+        els.statusText.textContent = 'Connecté';
+        clearTimeout(reconnectTimeout);
+
+        // Start heartbeat
+        heartbeatInterval = setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 15000);
+
+        // Send queued messages
+        while (messageQueue.length > 0 && ws.readyState === WebSocket.OPEN) {
+          const msg = messageQueue.shift();
+          ws.send(JSON.stringify(msg));
+        }
+      };
+
+      ws.onclose = () => {
+        isReconnecting = false;
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+
+        els.connectionStatus.classList.remove('connected');
+        els.connectionStatus.classList.add('disconnected');
+        els.statusText.textContent = 'Déconnecté';
+
+        // Exponential backoff
+        reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts - 1), 10000);
+
+        if (reconnectAttempts <= MAX_RECONNECT_ATTEMPTS) {
+          reconnectTimeout = setTimeout(connect, delay);
+        }
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+
+          // Handle ping/pong
+          if (msg.type === 'ping') {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'pong' }));
+            }
+            return;
+          }
+          if (msg.type === 'pong') {
+            return;
+          }
+
+          handleMessage(msg);
+        } catch (e) {
+          console.error('Invalid message:', e);
+        }
+      };
+    }
+
+    function send(msg) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify(msg));
+          return true;
+        } catch (e) {
+          messageQueue.push(msg);
+          return false;
+        }
+      } else {
+        messageQueue.push(msg);
+        if (!isReconnecting) {
+          connect();
+        }
+        return false;
+      }
+    }
+
+    function handleMessage(msg) {
+      if (msg.type === 'state') {
+        updateState(msg.data);
+      } else if (msg.type === 'trackChanged') {
+        currentState.title = msg.title;
+        currentState.keypoints = msg.keypoints || [];
+        updateUI();
+      }
+    }
+
+    function updateState(data) {
+      currentState = { ...currentState, ...data };
+      updateUI();
+    }
+
+    function formatTime(seconds) {
+      if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+      const s = Math.floor(seconds);
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return `${m}:${String(r).padStart(2, '0')}`;
+    }
+
+    function updateUI() {
+      // Update track title
+      els.trackTitle.textContent = currentState.title || 'Aucune piste';
+
+      // Update play/pause button
+      if (currentState.playing) {
+        els.playIcon.classList.add('hidden');
+        els.pauseIcon.classList.remove('hidden');
+        els.playPauseText.textContent = 'Pause';
+      } else {
+        els.playIcon.classList.remove('hidden');
+        els.pauseIcon.classList.add('hidden');
+        els.playPauseText.textContent = 'Play';
+      }
+
+      // Update time display
+      const cur = formatTime(currentState.currentTime || 0);
+      const dur = formatTime(currentState.duration || 0);
+      els.timeDisplay.textContent = `${cur} / ${dur}`;
+
+      // Update progress bar
+      const pct = currentState.duration > 0
+        ? (currentState.currentTime / currentState.duration) * 100
+        : 0;
+      els.progressFill.style.width = `${pct}%`;
+
+      // Update volume
+      els.volume.value = currentState.volume || 1;
+
+      // Update playback speed UI
+      const currentSpeed = currentState.playbackRate || 1;
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        const btnSpeed = parseFloat(btn.dataset.speed);
+        btn.classList.toggle('speed-btn--active', btnSpeed === currentSpeed);
+      });
+
+      // Update keypoints
+      renderKeypoints();
+    }
+
+    function renderKeypoints() {
+      const keypoints = currentState.keypoints || [];
+      if (keypoints.length === 0) {
+        els.keypointsList.innerHTML = '<div class="no-track">Aucun point clé défini</div>';
+        return;
+      }
+
+      els.keypointsList.innerHTML = '';
+      keypoints.forEach(kp => {
+        const btn = document.createElement('button');
+        btn.className = 'keypoint-btn';
+        btn.innerHTML = `
+          <span class="keypoint-color" style="background: ${kp.color}"></span>
+          <span class="keypoint-info">
+            <div class="keypoint-name">${kp.name}</div>
+            <div class="keypoint-time">${formatTime(kp.time)}</div>
+          </span>
+        `;
+        btn.addEventListener('click', () => {
+          send({ type: 'jumpToTime', time: kp.time });
+        });
+        els.keypointsList.appendChild(btn);
+      });
+    }
+
+    // Button handlers
+    els.btnPlayPause.addEventListener('click', () => {
+      send({ type: 'togglePlayPause' });
+    });
+
+    els.btnPrev.addEventListener('click', () => {
+      send({ type: 'previous' });
+    });
+
+    els.btnNext.addEventListener('click', () => {
+      send({ type: 'next' });
+    });
+
+    els.seekBack30.addEventListener('click', () => {
+      send({ type: 'seek', offset: -30 });
+    });
+
+    els.seekBack10.addEventListener('click', () => {
+      send({ type: 'seek', offset: -10 });
+    });
+
+    els.seekFwd10.addEventListener('click', () => {
+      send({ type: 'seek', offset: 10 });
+    });
+
+    els.seekFwd30.addEventListener('click', () => {
+      send({ type: 'seek', offset: 30 });
+    });
+
+    els.volume.addEventListener('input', () => {
+      const v = parseFloat(els.volume.value);
+      send({ type: 'setVolume', volume: v });
+    });
+
+    // Speed control event listeners
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const speed = parseFloat(btn.dataset.speed);
+        send({ type: 'setSpeed', speed: speed });
+      });
+    });
+
+    // Track selector functionality
+    async function fetchTracks() {
+      try {
+        const res = await fetch('/api/tracks');
+        const data = await res.json();
+        if (data.tracks) {
+          allTracks = data.tracks;
+          renderTrackList();
+        }
+      } catch (e) {
+        console.error('Failed to fetch tracks:', e);
+      }
+    }
+
+    function openTrackMenu() {
+      els.trackMenuOverlay.classList.add('open');
+      els.trackSearchInput.value = '';
+      els.trackSearchInput.focus();
+      fetchTracks();
+    }
+
+    function closeTrackMenu() {
+      els.trackMenuOverlay.classList.remove('open');
+    }
+
+    function renderTrackList(filter = '') {
+      const q = filter.trim().toLowerCase();
+      const filtered = q
+        ? allTracks.filter(t => t.title.toLowerCase().includes(q) || t.file.toLowerCase().includes(q))
+        : allTracks;
+
+      els.trackList.innerHTML = '';
+
+      if (filtered.length === 0) {
+        els.trackList.innerHTML = '<div class="no-track">Aucune chanson trouvée</div>';
+        return;
+      }
+
+      filtered.forEach(track => {
+        const item = document.createElement('button');
+        item.className = 'track-item';
+        if (currentState.title === track.title) {
+          item.classList.add('playing');
+        }
+        item.innerHTML = `
+          <div class="track-item-title">${track.title}</div>
+          <div class="track-item-hint">${track.file}</div>
+        `;
+        item.addEventListener('click', () => {
+          send({ type: 'playTrack', file: track.file });
+          closeTrackMenu();
+        });
+        els.trackList.appendChild(item);
+      });
+    }
+
+    // Track selector event listeners
+    els.btnTrackSelector.addEventListener('click', openTrackMenu);
+    els.btnCloseTrackMenu.addEventListener('click', closeTrackMenu);
+
+    els.trackSearchInput.addEventListener('input', () => {
+      renderTrackList(els.trackSearchInput.value);
+    });
+
+    // Close menu when clicking outside (on the overlay background)
+    els.trackMenuOverlay.addEventListener('click', (e) => {
+      if (e.target === els.trackMenuOverlay) {
+        closeTrackMenu();
+      }
+    });
+
+    // Close menu on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && els.trackMenuOverlay.classList.contains('open')) {
+        closeTrackMenu();
+      }
+    });
+
+    // Prevent double-tap zoom on mobile
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+
+    // Start connection
+    connect();
+  </script>
+</body>
+</html>
