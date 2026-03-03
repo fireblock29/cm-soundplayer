@@ -276,3 +276,7 @@ En cas de problème persistant :
 1. Notez le message d'erreur exact
 2. Vérifiez que vous suivez bien chaque étape dans l'ordre
 3. Redémarrez votre ordinateur et réessayez
+
+4. Appelez-moi !! Je vous apporterai de l'aide avec très grand plaisir !
+Lucas PERROT
+Voir avec Roxanne ou quelqu'un de l'année passée pour avoir mon contact ;)
